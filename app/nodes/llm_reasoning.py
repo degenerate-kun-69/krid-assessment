@@ -26,24 +26,24 @@ from app.config import settings
 # call them based on the conversation context.
 
 @tool
-def attach_image(keyword: str, caption: str = "") -> str:
+def attach_image(keyword: str, message: str) -> str:
     """
     Use this tool when the customer requests an image such as a product photo,
     showroom picture, or repair diagram. Provide the keyword that matches a
-    term in the media library (e.g. 'sofa', 'showroom', 'repair', 'diagram').
+    term in the media library (e.g. 'sofa', 'showroom', 'repair', 'diagram')
+    AND a conversational 'message' to send to the customer alongside the image.
     """
-    return json.dumps({"keyword": keyword, "caption": caption})
+    return json.dumps({"keyword": keyword, "message": message})
 
 
 @tool
-def attach_document(keyword: str, filename: str = "document.pdf") -> str:
+def attach_document(keyword: str, message: str, filename: str = "document.pdf") -> str:
     """
     Use this tool when the customer requests a document such as a catalog,
     invoice, service manual, or PDF. Provide the keyword that matches a term
-    in the media library (e.g. 'catalog', 'invoice', 'manual') and a
-    human-readable filename (e.g. 'product_catalog.pdf').
+    in the media library AND a conversational 'message' to send alongside it.
     """
-    return json.dumps({"keyword": keyword, "filename": filename})
+    return json.dumps({"keyword": keyword, "message": message, "filename": filename})
 
 
 TOOLS = [attach_image, attach_document]
@@ -137,11 +137,14 @@ async def llm_reasoning_node(state: dict) -> dict:
         url = media_library.get(keyword)
 
         if url:
+            # We use the LLM-generated message as the text reply
+            llm_reply = args.get("message", "")
+            
             if tool_name == "attach_image":
                 media_attachment = {
                     "type": "image",
                     "url": url,
-                    "caption": args.get("caption", ""),
+                    "caption": "",
                 }
             elif tool_name == "attach_document":
                 media_attachment = {
@@ -154,15 +157,9 @@ async def llm_reasoning_node(state: dict) -> dict:
         else:
             print(f"[LLM] Tool called but keyword '{keyword}' not in media_library — skipping media.")
 
-    # If the LLM only made tool calls and produced no text, generate a fallback
+    # If the LLM didn't generate any text (and no tool message was provided), fallback
     if not llm_reply.strip():
-        if media_attachment:
-            if media_attachment["type"] == "image":
-                llm_reply = f"Here's the {keyword} image you requested! Let me know if you need anything else."
-            else:
-                llm_reply = f"Here's the {keyword} document you requested! Let me know if you need anything else."
-        else:
-            llm_reply = "I'm here to help! Could you please tell me more about what you're looking for?"
+        llm_reply = "I'm here to help! Could you please tell me more about what you're looking for?"
 
     print(f"[LLM] Reply preview: {llm_reply[:80]}...")
 
