@@ -1,0 +1,55 @@
+# ── docker-compose.yml ─────────────────────────────────────────────────────────
+# Local development stack:
+#   - mongodb   : Local MongoDB 7 instance (no Atlas needed for local dev)
+#   - backend   : FastAPI app (built from Dockerfile)
+#
+# Ollama runs on the HOST (not in Docker) so it can access your AMD GPU.
+# The backend accesses it via http://host.docker.internal:11434
+#
+# Usage:
+#   docker compose up --build          # start everything
+#   docker compose down -v             # stop and remove volumes
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Local MongoDB (for development only — use Atlas URI in .env for prod) ──
+  mongodb:
+    image: mongo:7
+    container_name: krid_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: krid_whatsapp
+
+  # ── FastAPI backend ────────────────────────────────────────────────────────
+  backend:
+    build: .
+    container_name: krid_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+    # host.docker.internal resolves to the host machine so the container can
+    # reach Ollama (which runs on the host for GPU access).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Override MONGODB_URI so the container talks to the local mongo service.
+      # When deploying to Render, set the real Atlas URI as a Render env var.
+      MONGODB_URI: mongodb://mongodb:27017/krid_whatsapp
+      DB_NAME: krid_whatsapp
+      # Ollama is on the host — reach it via host.docker.internal
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      # Twilio secrets — read from your .env file on the host
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-whatsapp:+14155238886}
+
+volumes:
+  mongo_data:

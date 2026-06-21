@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Krid AI — WhatsApp Dashboard</title>
+  <meta name="description" content="Multi-tenant WhatsApp AI agent monitoring dashboard. View live conversations, chat history, and send broadcasts." />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+</head>
+<body>
+
+  <!-- ── Top Navigation ── -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__logo">⚡</span>
+      <span class="topbar__name">Krid AI</span>
+      <span class="topbar__tag">WhatsApp Orchestrator</span>
+    </div>
+    <div class="topbar__status" id="connection-status">
+      <span class="status-dot status-dot--ok"></span> Live
+    </div>
+  </header>
+
+  <!-- ── Main Layout ── -->
+  <main class="layout">
+
+    <!-- ── Left Sidebar ── -->
+    <aside class="sidebar">
+
+      <!-- Tenant Switcher -->
+      <section class="tenant-switcher" aria-label="Tenant switcher">
+        <p class="sidebar__label">Tenant</p>
+        <div class="tenant-tabs" id="tenant-tabs">
+          <!-- Populated by JS -->
+          <div class="tenant-tab skeleton"></div>
+          <div class="tenant-tab skeleton"></div>
+        </div>
+      </section>
+
+      <!-- Session List -->
+      <section class="session-list-section">
+        <div class="sidebar__header">
+          <p class="sidebar__label">Active Conversations</p>
+          <span class="badge" id="session-count">0</span>
+        </div>
+        <ul class="session-list" id="session-list" aria-label="Conversation sessions">
+          <!-- Populated by JS -->
+        </ul>
+      </section>
+
+      <!-- Action Buttons -->
+      <div class="sidebar__actions">
+        <button class="btn-broadcast" id="btn-open-simulator" aria-haspopup="dialog">
+          💬 Send WhatsApp Message
+        </button>
+        <button class="btn-broadcast" id="btn-open-broadcast" aria-haspopup="dialog">
+          📢 Broadcast Campaign
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ── Chat Panel ── -->
+    <section class="chat-panel" aria-label="Chat thread">
+      <div class="chat-panel__empty" id="chat-empty">
+        <span class="chat-panel__empty-icon">💬</span>
+        <p>Select a conversation to view the thread</p>
+        <p class="chat-panel__empty-hint">Use 💬 Send WhatsApp Message to start a conversation</p>
+      </div>
+
+      <!-- Chat Header (hidden until a session is selected) -->
+      <div class="chat-header" id="chat-header" hidden>
+        <div class="chat-header__info">
+          <span class="chat-header__phone" id="chat-phone"></span>
+          <span class="chat-header__status-badge" id="chat-status-badge"></span>
+        </div>
+        <span class="chat-header__tenant" id="chat-tenant-name"></span>
+      </div>
+
+      <!-- Message Thread -->
+      <div class="chat-thread" id="chat-thread" role="log" aria-live="polite"></div>
+
+      <!-- Typing indicator ghost (shown when bot is AGENT_RESPONDING) -->
+      <div class="typing-indicator" id="typing-indicator" hidden>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-label">bot is typing…</span>
+      </div>
+
+      <!-- Inline chat input (shown when a session is selected) -->
+      <div class="chat-input-bar" id="chat-input-bar" hidden>
+        <input
+          type="text"
+          id="chat-input"
+          class="chat-input"
+          placeholder="Type a message as this customer…"
+          autocomplete="off"
+        />
+        <button class="chat-send-btn" id="chat-send-btn" aria-label="Send message">
+          ➤
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ── Simulator Drawer (slide-in) ── -->
+  <div class="drawer-overlay" id="sim-drawer-overlay" hidden></div>
+  <aside class="drawer" id="simulator-drawer" role="dialog" aria-modal="true" aria-label="Chat simulator" hidden>
+    <div class="drawer__header">
+      <h2 class="drawer__title">💬 Send WhatsApp Message</h2>
+      <button class="drawer__close" id="btn-close-simulator" aria-label="Close drawer">✕</button>
+    </div>
+    <div class="drawer__body">
+      <p class="drawer__description">
+        Send a message as a customer. The bot will process it through the full
+        LangGraph pipeline and reply to the phone number below via WhatsApp.
+      </p>
+
+      <label class="form-label" for="sim-phone">
+        Customer Phone <span class="form-hint">(E.164 format)</span>
+      </label>
+      <input
+        id="sim-phone"
+        class="form-input"
+        type="text"
+        value=""
+        placeholder="+91XXXXXXXXXX"
+      />
+
+      <label class="form-label" for="sim-message">Message</label>
+      <textarea
+        id="sim-message"
+        class="form-textarea"
+        rows="3"
+        placeholder="Hi! Can you show me your catalog?"
+      ></textarea>
+
+      <button class="btn-send-broadcast" id="btn-send-sim">
+        Send to WhatsApp
+      </button>
+      <div class="sim-results" id="sim-results"></div>
+
+      <div class="sim-presets">
+        <p class="form-label">Quick Presets</p>
+        <button class="sim-preset-btn" data-msg="Hi! I'd like to see your catalog please.">📄 Ask for catalog</button>
+        <button class="sim-preset-btn" data-msg="Can you show me some sofa options?">🛋️ Ask for sofa image</button>
+        <button class="sim-preset-btn" data-msg="I need to see my invoice for the last service.">🧾 Ask for invoice</button>
+        <button class="sim-preset-btn" data-msg="Do you have any repair diagrams for a brake system?">🔧 Ask for repair diagram</button>
+        <button class="sim-preset-btn" data-msg="Hello, what services do you offer?">👋 General greeting</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Broadcast Drawer (slide-in) ── -->
+  <div class="drawer-overlay" id="drawer-overlay" hidden></div>
+  <aside class="drawer" id="broadcast-drawer" role="dialog" aria-modal="true" aria-label="Broadcast campaign" hidden>
+    <div class="drawer__header">
+      <h2 class="drawer__title">📢 Broadcast Campaign</h2>
+      <button class="drawer__close" id="btn-close-broadcast" aria-label="Close drawer">✕</button>
+    </div>
+    <div class="drawer__body">
+      <label class="form-label" for="broadcast-numbers">
+        Phone Numbers <span class="form-hint">(one per line, E.164 format e.g. +919876543210)</span>
+      </label>
+      <textarea
+        id="broadcast-numbers"
+        class="form-textarea"
+        rows="6"
+        placeholder="+919876543210&#10;+447911123456"
+      ></textarea>
+
+      <label class="form-label" for="broadcast-message">Message</label>
+      <textarea
+        id="broadcast-message"
+        class="form-textarea"
+        rows="4"
+        placeholder="Hello! We have a new catalog available. Reply 'catalog' to receive it."
+      ></textarea>
+
+      <button class="btn-send-broadcast" id="btn-send-broadcast">
+        Send Broadcast
+      </button>
+      <div class="broadcast-results" id="broadcast-results"></div>
+    </div>
+  </aside>
+
+  <script src="/app.js"></script>
+</body>
+</html>
