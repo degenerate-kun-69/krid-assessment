@@ -24,9 +24,14 @@ class Settings(BaseSettings):
     # or your approved Twilio WhatsApp sender number.
     TWILIO_WHATSAPP_NUMBER: str = ""
 
-    # ── Ollama (local LLM) ─────────────────────────────────────
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.1:8b"
+    # ── Gemini (Google GenAI) ──────────────────────────────────
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+
+    # ── Public base URL (for media asset URLs stored in MongoDB) ──
+    # Set to your deployed URL (e.g. https://krid-ai.onrender.com) in production.
+    # Twilio requires publicly accessible URLs to send media.
+    BASE_URL: str = "http://localhost:8080"
 
     # ── Convenience property ───────────────────────────────────
     @property

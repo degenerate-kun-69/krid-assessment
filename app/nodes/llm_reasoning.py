@@ -15,7 +15,7 @@ Tool calling with Ollama:
 """
 
 import json
-from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.tools import tool
 from app.config import settings
@@ -97,7 +97,7 @@ def _build_messages(tenant_doc: dict, chat_history: list, inbound_text: str) -> 
 async def llm_reasoning_node(state: dict) -> dict:
     """
     LangGraph node function.
-    Calls Ollama LLM with tool support. Returns llm_reply and optionally media_attachment.
+    Calls Gemini LLM with tool support. Returns llm_reply and optionally media_attachment.
     """
     tenant_doc = state.get("tenant_doc") or {}
     chat_history = state.get("chat_history", [])
@@ -105,9 +105,9 @@ async def llm_reasoning_node(state: dict) -> dict:
     media_library: dict = tenant_doc.get("media_library", {})
 
     # ── Initialise the LLM with tools ──────────────────────────────
-    llm = ChatOllama(
-        model=settings.OLLAMA_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
+    llm = ChatGoogleGenerativeAI(
+        model=settings.GEMINI_MODEL,
+        api_key=settings.GEMINI_API_KEY,
         temperature=0.7,
     ).bind_tools(TOOLS)
 
@@ -115,10 +115,10 @@ async def llm_reasoning_node(state: dict) -> dict:
     messages = _build_messages(tenant_doc, chat_history, inbound_text)
 
     try:
-        # ChatOllama.ainvoke is async
+        # ChatGoogleGenerativeAI.ainvoke is async
         response = await llm.ainvoke(messages)
     except Exception as exc:
-        print(f"[LLM] Error calling Ollama: {exc}")
+        print(f"[LLM] Error calling Gemini: {exc}")
         return {
             "llm_reply": "I'm sorry, I'm having trouble processing your request right now. Please try again in a moment.",
             "media_attachment": None,

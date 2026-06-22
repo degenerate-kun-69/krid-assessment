@@ -20,6 +20,9 @@ COPY app/ ./app/
 # Copy frontend static files (served by FastAPI StaticFiles mount)
 COPY frontend/ ./frontend/
 
+# Copy media assets (images, PDFs served at /media/*)
+COPY media/ ./media/
+
 # Expose the port Render / Cloud Run / docker-compose will forward to
 EXPOSE 8080
 

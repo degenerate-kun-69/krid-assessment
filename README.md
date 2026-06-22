@@ -54,7 +54,7 @@ Krid ai/
 │   ├── config.py             # Settings from .env
 │   ├── database/
 │   │   ├── mongo.py          # Motor async client
-│   │   └── seed.py           # Seeds Tenant A & B
+│   │   └── seed.py           # Seeds Tenant A & B with media libraries
 │   ├── models/
 │   │   ├── tenant.py
 │   │   ├── session.py
@@ -70,6 +70,24 @@ Krid ai/
 │       ├── context_retriever.py
 │       ├── llm_reasoning.py
 │       └── dispatcher.py
+├── media/                     # Self-hosted media assets for tenants
+│   ├── minecraft/             # 10 Minecraft scene images
+│   │   ├── house.png
+│   │   ├── cave.png
+│   │   ├── village.png
+│   │   ├── nether.png
+│   │   ├── castle.png
+│   │   ├── ocean_monument.png
+│   │   ├── ender_dragon.png
+│   │   ├── farm.png
+│   │   ├── enchanting.png
+│   │   └── snow_biome.png
+│   ├── sofas/                 # 3 luxury sofa images
+│   │   ├── white_sectional.png
+│   │   ├── green_velvet.png
+│   │   └── leather_chesterfield.png
+│   ├── restaurant_menu.pdf    # Sample restaurant menu (PDF)
+│   └── generate_menu_pdf.py   # Script to regenerate the PDF
 ├── frontend/
 │   ├── index.html
 │   ├── style.css
@@ -80,6 +98,95 @@ Krid ai/
 ├── .env.example
 ├── TWILIO_SETUP.md           # How to set up the Twilio WhatsApp Sandbox
 └── README.md
+```
+
+---
+
+## Media Library & Rich Media Support
+
+The system supports sending **images**, **documents (PDFs)**, and **text** via WhatsApp using Twilio's `MediaUrl` parameter. Each tenant has a `media_library` stored in MongoDB Atlas that maps keywords to publicly accessible URLs.
+
+### How It Works
+
+1. **Media assets** are stored in the `media/` directory and served by FastAPI at `/media/*`
+2. On startup, `seed.py` builds absolute URLs using `BASE_URL` + `/media/<path>` and writes them to MongoDB Atlas as part of each tenant's `media_library` field
+3. When a customer sends a message, the **LLM Reasoning Node** checks if the message matches a media keyword and calls `attach_image` or `attach_document` tools
+4. The **Dispatcher Node** sends the media via Twilio's API using the public URL
+
+### Tenant A — Luxury Furniture Store
+
+| Keyword | Type | Asset |
+|---|---|---|
+| `sofa` / `white sofa` | Image | White sectional sofa |
+| `green sofa` | Image | Green velvet sofa |
+| `leather sofa` | Image | Leather chesterfield sofa |
+| `showroom` | Image | Showroom view |
+| `table` | Image | Dining table |
+| `catalog` / `menu` | PDF | Restaurant menu catalog |
+
+### Tenant B — Minecraft Gaming Store
+
+| Keyword | Type | Asset |
+|---|---|---|
+| `house` | Image | Minecraft wooden house |
+| `cave` | Image | Underground cave with lava & diamonds |
+| `village` | Image | Village at sunset |
+| `nether` | Image | Nether dimension with ghast |
+| `castle` | Image | Epic stone castle with moat |
+| `ocean` / `ocean monument` | Image | Underwater ocean monument |
+| `dragon` / `ender dragon` | Image | Ender Dragon boss fight |
+| `farm` | Image | Organized crop farm |
+| `enchanting` | Image | Enchanting room with books |
+| `snow` | Image | Snowy mountain biome with aurora |
+| `catalog` / `menu` | PDF | Store catalog |
+
+### MongoDB Atlas Schema (Tenant Document)
+
+```json
+{
+  "tenant_id": "tenant_b",
+  "name": "Minecraft Gaming Store",
+  "system_prompt": "You are an enthusiastic gaming advisor...",
+  "media_library": {
+    "house": "https://<your-app>.onrender.com/media/minecraft/house.png",
+    "cave": "https://<your-app>.onrender.com/media/minecraft/cave.png",
+    "castle": "https://<your-app>.onrender.com/media/minecraft/castle.png",
+    "catalog": "https://<your-app>.onrender.com/media/restaurant_menu.pdf"
+  }
+}
+```
+
+### Twilio Media Sending (Template)
+
+The Twilio Whatsapp API sends media using the `MediaUrl` parameter in a standard REST call:
+
+```python
+# Download the helper library from https://www.twilio.com/docs/python/install
+import os
+from twilio.rest import Client
+
+account_sid = os.environ["TWILIO_ACCOUNT_SID"]
+auth_token = os.environ["TWILIO_AUTH_TOKEN"]
+client = Client(account_sid, auth_token)
+
+message = client.messages.create(
+    media_url=["https://<your-app>.onrender.com/media/minecraft/castle.png"],
+    from_="whatsapp:+14155238886",
+    to="whatsapp:+15017122661",
+)
+
+print(message.sid)
+```
+
+In Krid AI, this is handled automatically by `app/services/whatsapp.py` using the raw Twilio REST API with `httpx`:
+
+```python
+payload = {
+    "From": "whatsapp:+14155238886",
+    "To": "whatsapp:+919876543210",
+    "Body": "Here's the castle build you asked for! 🏰",
+    "MediaUrl": "https://<your-app>.onrender.com/media/minecraft/castle.png",
+}
 ```
 
 ---
@@ -131,6 +238,7 @@ cp .env.example .env
 #   TWILIO_ACCOUNT_SID   — from Twilio Console
 #   TWILIO_AUTH_TOKEN     — from Twilio Console
 #   TWILIO_WHATSAPP_NUMBER — sandbox: whatsapp:+14155238886
+#   BASE_URL             — http://localhost:8080 (local) or your deployed URL
 #   OLLAMA_*             — defaults work if Ollama is running locally
 nano .env
 ```
@@ -140,8 +248,10 @@ nano .env
 ```bash
 python -m app.database.seed
 # Output: [Seed] Inserted tenant: Luxury Furniture Store
-#         [Seed] Inserted tenant: Automotive Care Center
+#         [Seed] Inserted tenant: Minecraft Gaming Store
 ```
+
+This writes the tenant documents (including `media_library` URL mappings) to MongoDB Atlas.
 
 ### 4. Start the server
 
@@ -150,6 +260,7 @@ uvicorn app.main:app --reload --port 8080
 ```
 
 Open **http://localhost:8080** — the dashboard should load.
+Media assets are served at **http://localhost:8080/media/*** (e.g. `/media/minecraft/castle.png`).
 
 ### 5. Test without WhatsApp (Chat Simulator)
 
@@ -187,11 +298,14 @@ docker compose up --build
    TWILIO_ACCOUNT_SID     = ACxxxxxxxxx
    TWILIO_AUTH_TOKEN       = xxxxxxxx
    TWILIO_WHATSAPP_NUMBER = whatsapp:+14155238886
+   BASE_URL               = https://<your-app>.onrender.com
    OLLAMA_BASE_URL        = https://<your-ollama-server>  (or ngrok tunnel to local)
    OLLAMA_MODEL           = llama3.1:8b
    ```
 6. Click **Deploy**
 7. Copy the Render public URL → use it in Twilio's webhook config (see `TWILIO_SETUP.md` Step 4)
+
+> **Important**: Set `BASE_URL` to your Render public URL so that media library URLs in MongoDB Atlas point to the correct host. Twilio needs publicly accessible URLs to send media.
 
 > **Note on Ollama in production**: Render free tier doesn't have GPUs. For production, either:
 > - Run Ollama on a separate GPU VM and expose it (set `OLLAMA_BASE_URL` to that server)
@@ -208,6 +322,7 @@ docker compose up --build
 | `TWILIO_ACCOUNT_SID` | Twilio Account SID | `ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `TWILIO_AUTH_TOKEN` | Twilio Auth Token | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `TWILIO_WHATSAPP_NUMBER` | Twilio WhatsApp sender | `whatsapp:+14155238886` |
+| `BASE_URL` | Public URL for media assets | `https://krid-ai.onrender.com` |
 | `OLLAMA_BASE_URL` | Ollama server URL | `http://localhost:11434` |
 | `OLLAMA_MODEL` | Model name in Ollama | `llama3.1:8b` |
 
@@ -224,6 +339,7 @@ docker compose up --build
 | `GET` | `/api/sessions/{id}/messages` | Message thread |
 | `POST` | `/api/broadcast` | Broadcast message to phone list |
 | `POST` | `/api/simulate` | Simulate inbound message (testing) |
+| `GET` | `/media/*` | Static media assets (images, PDFs) |
 | `GET` | `/` | Dashboard frontend |
 
 ---
@@ -255,7 +371,20 @@ Node sequence:
 2. Start Ollama: `ollama serve`
 3. Start the backend: `uvicorn app.main:app --reload --port 8080`
 4. Expose locally with ngrok: `ngrok http 8080`
-5. Set the ngrok URL as the Twilio webhook URL (see `TWILIO_SETUP.md` Step 4)
-6. Send a WhatsApp message to the Twilio Sandbox number
-7. Watch the server logs — you should see all 4 nodes execute
-8. Open `http://localhost:8080` and see the conversation appear on the dashboard
+5. Update `BASE_URL` in `.env` to the ngrok URL (e.g. `https://xxxx.ngrok-free.app`)
+6. Set the ngrok URL as the Twilio webhook URL (see `TWILIO_SETUP.md` Step 4)
+7. Send a WhatsApp message to the Twilio Sandbox number
+8. Watch the server logs — you should see all 4 nodes execute
+9. Open `http://localhost:8080` and see the conversation appear on the dashboard
+
+### Testing Media (Example WhatsApp Messages)
+
+**Tenant A (Luxury Furniture Store):**
+- _"Can you show me a sofa?"_ → Bot sends white sectional sofa image
+- _"I'd like to see the leather sofa"_ → Bot sends chesterfield sofa image
+- _"Send me the catalog"_ → Bot sends restaurant menu PDF
+
+**Tenant B (Minecraft Gaming Store):**
+- _"Show me a castle build"_ → Bot sends epic castle image
+- _"What does the nether look like?"_ → Bot sends nether dimension image
+- _"I want to see the ender dragon"_ → Bot sends dragon boss fight image

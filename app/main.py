@@ -54,6 +54,11 @@ app.add_middleware(
 app.include_router(webhook.router)
 app.include_router(dashboard.router)
 
+# ── Static media assets ────────────────────────────────────────────────────────
+# Serves tenant media files (images, PDFs) from the media/ directory.
+# These URLs are stored in MongoDB and sent via Twilio to WhatsApp customers.
+app.mount("/media", StaticFiles(directory="media"), name="media")
+
 # ── Static frontend ────────────────────────────────────────────────────────────
 # Serves index.html, style.css, app.js from the frontend/ directory.
 # IMPORTANT: Mount AFTER the API routers so /api/* routes take priority.
