@@ -20,7 +20,7 @@ from app.services.langgraph_agent import get_agent
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
 
-# ── GET /api/tenants ───────────────────────────────────────────────────────────
+
 @router.get("/tenants")
 async def list_tenants():
     """Return all registered tenants (without internal MongoDB _id)."""
@@ -29,7 +29,7 @@ async def list_tenants():
     return {"tenants": tenants}
 
 
-# ── GET /api/tenants/{tenant_id}/sessions ─────────────────────────────────────
+
 @router.get("/tenants/{tenant_id}/sessions")
 async def list_sessions(tenant_id: str):
     """
@@ -43,7 +43,7 @@ async def list_sessions(tenant_id: str):
         .sort("updated_at", -1)
         .to_list(length=500)
     )
-    # Serialize datetime fields for JSON response
+    
     for s in sessions:
         for field in ("created_at", "updated_at"):
             if field in s and hasattr(s[field], "isoformat"):
@@ -51,7 +51,7 @@ async def list_sessions(tenant_id: str):
     return {"sessions": sessions}
 
 
-# ── GET /api/sessions/{session_id}/messages ───────────────────────────────────
+
 @router.get("/sessions/{session_id}/messages")
 async def get_messages(session_id: str):
     """
@@ -71,7 +71,7 @@ async def get_messages(session_id: str):
     return {"messages": messages}
 
 
-# ── POST /api/broadcast ───────────────────────────────────────────────────────
+
 class BroadcastRequest(BaseModel):
     tenant_id: str
     phone_numbers: List[str]
@@ -101,9 +101,9 @@ async def broadcast_message(body: BroadcastRequest):
     return {"broadcast_results": results}
 
 
-# ── POST /api/simulate ────────────────────────────────────────────────────────
-# This endpoint lets you test the full LangGraph pipeline from the dashboard
-# without needing a real WhatsApp account. It mimics what the webhook POST does.
+
+
+
 
 class SimulateRequest(BaseModel):
     tenant_id: str
@@ -133,7 +133,7 @@ async def simulate_message(body: SimulateRequest, background_tasks: BackgroundTa
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    # Generate a fake WhatsApp message ID
+    
     fake_wa_id = f"sim_{uuid.uuid4().hex[:12]}"
 
     initial_state = {
@@ -149,7 +149,7 @@ async def simulate_message(body: SimulateRequest, background_tasks: BackgroundTa
         "session_id": None,
     }
 
-    # Run agent in background — returns 200 immediately (same pattern as real webhook)
+    
     background_tasks.add_task(_run_simulated_agent, initial_state)
 
     return {

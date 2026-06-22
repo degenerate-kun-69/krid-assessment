@@ -1,14 +1,14 @@
-# ── docker-compose.yml ─────────────────────────────────────────────────────────
-# Deployment stack:
-#   - backend   : FastAPI app (built from Dockerfile)
-#
-# Usage:
-#   docker compose up --build          # start the app
-# ──────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
 
 services:
 
-  # ── FastAPI backend ────────────────────────────────────────────────────────
+
   backend:
     build: .
     container_name: krid_backend
@@ -16,15 +16,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # MongoDB Atlas — read from your .env file on the host
+
       MONGODB_URI: ${MONGODB_URI}
       DB_NAME: ${DB_NAME:-krid_whatsapp}
       
-      # Gemini API — read from your .env file
+
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash}
       
-      # Twilio secrets — read from your .env file
+
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
       TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-whatsapp:+14155238886}

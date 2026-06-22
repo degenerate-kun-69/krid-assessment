@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 dev.py — One-command local development launcher.
 
@@ -40,7 +40,7 @@ def _read_tunnel_url(process, result: dict, ready_event: threading.Event):
             if not line:
                 continue
             
-            # Look for the https:// URL
+            
             match = re.search(r"(https://\S+\.pinggy\.(link|net))", line)
             if match:
                 result["url"] = match.group(1)
@@ -57,8 +57,8 @@ def start_tunnel(port: int) -> tuple:
     print(f"[dev] Starting pinggy.io tunnel on port {port} via SSH...")
 
     try:
-        # We use -o StrictHostKeyChecking=no to avoid prompt on first connect
-        # -R0:localhost:port asks pinggy to allocate a random subdomain
+        
+        
         process = subprocess.Popen(
             ["ssh", "-p", "443", "-o", "StrictHostKeyChecking=no", f"-R0:localhost:{port}", "a.pinggy.io"],
             stdout=subprocess.PIPE,
@@ -71,7 +71,7 @@ def start_tunnel(port: int) -> tuple:
         print("[dev]   Falling back to local-only mode (no tunnel).")
         return "", None
 
-    # Wait for the URL to appear (timeout after 45s)
+    
     result = {}
     ready = threading.Event()
     reader = threading.Thread(target=_read_tunnel_url, args=(process, result, ready), daemon=True)
@@ -189,12 +189,12 @@ def main():
 
     tunnel_process = None
 
-    # ── Start pinggy (unless --no-tunnel) ─────────────────────────
+    
     public_url = ""
     if not args.no_tunnel:
         public_url, tunnel_process = start_tunnel(args.port)
 
-    # ── Set BASE_URL environment variable ──────────────────────────
+    
     if public_url:
         os.environ["BASE_URL"] = public_url
         print(f"[dev] BASE_URL set to: {public_url}")
@@ -206,7 +206,7 @@ def main():
     print(f"[dev] Starting uvicorn on {args.host}:{args.port}...")
     print()
 
-    # ── Start uvicorn (blocks until Ctrl+C) ────────────────────────
+    
     import uvicorn
 
     try:
@@ -220,7 +220,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        # Clean up tunnel process
+        
         if tunnel_process:
             tunnel_process.terminate()
             tunnel_process.wait(timeout=5)

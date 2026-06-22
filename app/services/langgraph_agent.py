@@ -13,7 +13,7 @@ from langgraph.graph import StateGraph, END
 import operator
 
 
-# ── State schema ───────────────────────────────────────────────────────────────
+
 
 class AgentState(TypedDict):
     """
@@ -21,33 +21,33 @@ class AgentState(TypedDict):
     Each node receives this dict and returns a (partial) dict of updates.
     LangGraph merges the updates back into the state automatically.
     """
-    # ── Input fields (set by the webhook before invoking the agent) ──
+    
     tenant_id: str
     customer_phone: str
-    wa_message_id: str          # Meta's message ID (for mark_as_read)
-    inbound_text: str           # The customer's message text
-    inbound_media_url: Optional[str]  # If customer sent media (future use)
+    wa_message_id: str          
+    inbound_text: str           
+    inbound_media_url: Optional[str]  
 
-    # ── Populated by context_retriever node ──
-    tenant_doc: Optional[dict]   # Full tenant document from MongoDB
-    chat_history: list           # Last 5 messages as dicts
+    
+    tenant_doc: Optional[dict]   
+    chat_history: list           
 
-    # ── Populated by llm_reasoning node ──
-    llm_reply: Optional[str]     # The text reply the LLM wants to send
+    
+    llm_reply: Optional[str]     
     media_attachment: Optional[dict]
-    # media_attachment shape:
-    # {
-    #   "type": "image" | "document",
-    #   "url": "https://...",
-    #   "caption": "...",          # for images
-    #   "filename": "catalog.pdf"  # for documents
-    # }
+    
+    
+    
+    
+    
+    
+    
 
-    # ── Session tracking ──
-    session_id: Optional[str]    # Composite: '{tenant_id}_{customer_phone}'
+    
+    session_id: Optional[str]    
 
 
-# ── Graph builder ──────────────────────────────────────────────────────────────
+
 
 def build_graph():
     """
@@ -62,13 +62,13 @@ def build_graph():
 
     graph = StateGraph(AgentState)
 
-    # ── Register nodes ─────────────────────────────────────────────
+    
     graph.add_node("acknowledge", acknowledge_node)
     graph.add_node("context_retriever", context_retriever_node)
     graph.add_node("llm_reasoning", llm_reasoning_node)
     graph.add_node("dispatcher", dispatcher_node)
 
-    # ── Wire edges ─────────────────────────────────────────────────
+    
     graph.set_entry_point("acknowledge")
     graph.add_edge("acknowledge", "context_retriever")
     graph.add_edge("context_retriever", "llm_reasoning")
@@ -78,9 +78,9 @@ def build_graph():
     return graph.compile()
 
 
-# ── Lazy singleton ─────────────────────────────────────────────────────────────
-# We build the graph lazily the first time it's needed, not at import time.
-# This avoids crashes during module-level import if dependencies aren't ready.
+
+
+
 _agent = None
 
 

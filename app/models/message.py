@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 
 
 class MessageDirection(str, Enum):
-    INBOUND = "inbound"    # Customer → Bot
-    OUTBOUND = "outbound"  # Bot → Customer
+    INBOUND = "inbound"    
+    OUTBOUND = "outbound"  
 
 
 class MessageLog(BaseModel):
@@ -22,6 +22,6 @@ class MessageLog(BaseModel):
     sender: str = Field(..., description="Phone number or 'bot'")
     text: Optional[str] = None
     media_url: Optional[str] = None
-    mime_type: Optional[str] = None          # e.g. 'application/pdf', 'image/jpeg'
-    bot_was_typing: bool = False             # True if typing indicator was active before this msg
+    mime_type: Optional[str] = None          
+    bot_was_typing: bool = False             
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -9,10 +9,10 @@ Usage in other modules:
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from app.config import settings
 
-# ── Client singleton ───────────────────────────────────────────────────────────
-# Motor is thread-safe and the client should be created once at startup.
+
+
 _client: AsyncIOMotorClient | None = None
-db: AsyncIOMotorDatabase | None = None  # type: ignore[assignment]
+db: AsyncIOMotorDatabase | None = None  
 
 
 def connect_db() -> None:
@@ -34,10 +34,10 @@ def close_db() -> None:
         print("[DB] MongoDB connection closed.")
 
 
-# ── Collection shortcuts ───────────────────────────────────────────────────────
-# These are properties so they always reference the current `db` instance.
-# Usage: from app.database.mongo import get_tenants_col
-#        col = get_tenants_col()
+
+
+
+
 
 def get_tenants_col():
     return db["tenants"]

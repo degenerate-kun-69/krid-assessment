@@ -13,7 +13,7 @@ import asyncio
 from app.config import settings
 from app.database.mongo import connect_db, get_tenants_col
 
-# ── Helper: build absolute media URL ───────────────────────────────────────────
+
 
 def _media_url(path: str) -> str:
     """Build a full public URL for a media asset."""
@@ -21,7 +21,7 @@ def _media_url(path: str) -> str:
     return f"{base}/media/{path.lstrip('/')}"
 
 
-# ── Tenant seed data ───────────────────────────────────────────────────────────
+
 
 def _build_tenants() -> list[dict]:
     """
@@ -40,15 +40,15 @@ def _build_tenants() -> list[dict]:
                 "Always end your replies with an offer to help further."
             ),
             "media_library": {
-                # ── Sofa images (3 styles) ────────────────────────
+                
                 "sofa": _media_url("sofas/white_sectional.png"),
                 "white sofa": _media_url("sofas/white_sectional.png"),
                 "green sofa": _media_url("sofas/green_velvet.png"),
                 "leather sofa": _media_url("sofas/leather_chesterfield.png"),
-                # ── General furniture ─────────────────────────────
+                
                 "showroom": _media_url("sofas/green_velvet.png"),
                 "table": "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=800",
-                # ── Documents ─────────────────────────────────────
+                
                 "catalog": _media_url("restaurant_menu.pdf"),
                 "menu": _media_url("restaurant_menu.pdf"),
             },
@@ -64,7 +64,7 @@ def _build_tenants() -> list[dict]:
                 "Always end your replies with an offer to help further."
             ),
             "media_library": {
-                # ── Minecraft scene images (10 unique scenes) ─────
+                
                 "house": _media_url("minecraft/house.png"),
                 "cave": _media_url("minecraft/cave.png"),
                 "village": _media_url("minecraft/village.png"),
@@ -77,7 +77,7 @@ def _build_tenants() -> list[dict]:
                 "farm": _media_url("minecraft/farm.png"),
                 "enchanting": _media_url("minecraft/enchanting.png"),
                 "snow": _media_url("minecraft/snow_biome.png"),
-                # ── Documents ─────────────────────────────────────
+                
                 "catalog": _media_url("restaurant_menu.pdf"),
                 "menu": _media_url("restaurant_menu.pdf"),
             },
@@ -95,7 +95,7 @@ async def seed_tenants() -> None:
             await col.insert_one(tenant)
             print(f"[Seed] Inserted tenant: {tenant['name']}")
         else:
-            # Update media_library in case URLs changed (e.g. new BASE_URL)
+            
             await col.update_one(
                 {"tenant_id": tenant["tenant_id"]},
                 {"$set": {"media_library": tenant["media_library"]}},
@@ -103,7 +103,7 @@ async def seed_tenants() -> None:
             print(f"[Seed] Tenant exists, updated media_library: {tenant['name']}")
 
 
-# ── Standalone entry point ─────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     connect_db()
     asyncio.run(seed_tenants())

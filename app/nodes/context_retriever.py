@@ -18,14 +18,14 @@ async def context_retriever_node(state: dict) -> dict:
     tenant_id = state["tenant_id"]
     session_id = state["session_id"]
 
-    # ── Step 1: Fetch tenant document ──────────────────────────────
+    
     tenants_col = get_tenants_col()
     tenant_doc = await tenants_col.find_one(
         {"tenant_id": tenant_id},
-        {"_id": 0},  # Exclude MongoDB internal _id from result
+        {"_id": 0},  
     )
     if tenant_doc is None:
-        # Fallback: unknown tenant — use a generic prompt so the pipeline doesn't crash.
+        
         print(f"[Context] WARNING: Tenant '{tenant_id}' not found in DB.")
         tenant_doc = {
             "tenant_id": tenant_id,
@@ -34,16 +34,16 @@ async def context_retriever_node(state: dict) -> dict:
             "media_library": {},
         }
 
-    # ── Step 2: Fetch last 5 messages for this session ─────────────
+    
     messages_col = get_messages_col()
     cursor = (
         messages_col
         .find({"session_id": session_id}, {"_id": 0})
-        .sort("timestamp", -1)   # newest first
+        .sort("timestamp", -1)   
         .limit(5)
     )
     recent_msgs = await cursor.to_list(length=5)
-    # Reverse so oldest is first (natural conversation order for the LLM)
+    
     chat_history = list(reversed(recent_msgs))
 
     print(

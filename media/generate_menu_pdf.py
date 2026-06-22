@@ -11,7 +11,7 @@ class MenuPDF(FPDF):
 
     def header(self):
         self.set_font("Helvetica", "B", 28)
-        self.set_text_color(139, 69, 19)  # Saddle brown
+        self.set_text_color(139, 69, 19)  
         self.cell(0, 18, "La Maison Elegante", align="C", new_x="LMARGIN", new_y="NEXT")
         self.set_font("Helvetica", "I", 12)
         self.set_text_color(100, 100, 100)
@@ -36,12 +36,12 @@ class MenuPDF(FPDF):
     def menu_item(self, name: str, description: str, price: str):
         self.set_font("Helvetica", "B", 11)
         self.set_text_color(40, 40, 40)
-        # Name on the left, price on the right
+        
         self.cell(150, 6, name)
         self.set_font("Helvetica", "B", 11)
         self.set_text_color(139, 69, 19)
         self.cell(0, 6, price, align="R", new_x="LMARGIN", new_y="NEXT")
-        # Description
+        
         self.set_font("Helvetica", "", 9)
         self.set_text_color(100, 100, 100)
         self.multi_cell(0, 5, description)
@@ -53,7 +53,7 @@ def generate_menu():
     pdf.set_auto_page_break(auto=True, margin=25)
     pdf.add_page()
 
-    # ── Starters ──
+    
     pdf.section_title("Starters")
     pdf.menu_item(
         "Truffle Burrata",
@@ -78,7 +78,7 @@ def generate_menu():
 
     pdf.ln(4)
 
-    # ── Main Courses ──
+    
     pdf.section_title("Main Courses")
     pdf.menu_item(
         "Wagyu Beef Tenderloin",
@@ -108,7 +108,7 @@ def generate_menu():
 
     pdf.ln(4)
 
-    # ── Desserts ──
+    
     pdf.section_title("Desserts")
     pdf.menu_item(
         "Chocolate Lava Cake",
@@ -128,7 +128,7 @@ def generate_menu():
 
     pdf.ln(4)
 
-    # ── Beverages ──
+    
     pdf.section_title("Beverages")
     pdf.menu_item(
         "Signature Old Fashioned",

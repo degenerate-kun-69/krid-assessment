@@ -21,9 +21,9 @@ from langchain_core.tools import tool
 from app.config import settings
 
 
-# ── Tool definitions ───────────────────────────────────────────────────────────
-# These are passed to the LLM via bind_tools(). The LLM decides whether to
-# call them based on the conversation context.
+
+
+
 
 @tool
 def attach_image(keyword: str, message: str) -> str:
@@ -49,7 +49,7 @@ def attach_document(keyword: str, message: str, filename: str = "document.pdf") 
 TOOLS = [attach_image, attach_document]
 
 
-# ── Helper: build chat history for the LLM ────────────────────────────────────
+
 
 def _build_messages(tenant_doc: dict, chat_history: list, inbound_text: str) -> list:
     """
@@ -60,13 +60,11 @@ def _build_messages(tenant_doc: dict, chat_history: list, inbound_text: str) -> 
     media_library = tenant_doc.get("media_library", {})
     base_prompt = tenant_doc.get("system_prompt", "You are a helpful assistant.")
 
-    # Build a media library description so the LLM knows what's available
+    
     if media_library:
-        media_section = "\n\nYou have access to the following media library. " \
-                        "When a customer asks for any of these items, use the appropriate tool " \
-                        "to attach the media to your reply:\n"
+        media_section = "\n\nYou have access to the following media library. "                        "When a customer asks for any of these items, use the appropriate tool "                        "to attach the media to your reply:\n"
         for keyword, url in media_library.items():
-            # Determine if it's a document or image based on URL extension
+            
             if url.endswith(".pdf"):
                 media_section += f"  - \"{keyword}\" → a PDF document (use attach_document tool with keyword='{keyword}')\n"
             else:
@@ -77,7 +75,7 @@ def _build_messages(tenant_doc: dict, chat_history: list, inbound_text: str) -> 
 
     messages = [SystemMessage(content=system_prompt)]
 
-    # Add chat history (skip messages with no text to avoid empty content errors)
+    
     for msg in chat_history:
         text = msg.get("text") or ""
         if not text.strip():
@@ -87,12 +85,12 @@ def _build_messages(tenant_doc: dict, chat_history: list, inbound_text: str) -> 
         else:
             messages.append(AIMessage(content=text))
 
-    # Add the current inbound message
+    
     messages.append(HumanMessage(content=inbound_text))
     return messages
 
 
-# ── Node ───────────────────────────────────────────────────────────────────────
+
 
 async def llm_reasoning_node(state: dict) -> dict:
     """
@@ -104,18 +102,18 @@ async def llm_reasoning_node(state: dict) -> dict:
     inbound_text = state.get("inbound_text", "")
     media_library: dict = tenant_doc.get("media_library", {})
 
-    # ── Initialise the LLM with tools ──────────────────────────────
+    
     llm = ChatGoogleGenerativeAI(
         model=settings.GEMINI_MODEL,
         api_key=settings.GEMINI_API_KEY,
         temperature=0.7,
     ).bind_tools(TOOLS)
 
-    # ── Build message list and invoke ──────────────────────────────
+    
     messages = _build_messages(tenant_doc, chat_history, inbound_text)
 
     try:
-        # ChatGoogleGenerativeAI.ainvoke is async
+        
         response = await llm.ainvoke(messages)
     except Exception as exc:
         print(f"[LLM] Error calling Gemini: {exc}")
@@ -127,9 +125,9 @@ async def llm_reasoning_node(state: dict) -> dict:
     llm_reply = response.content or ""
     media_attachment = None
 
-    # ── Check if LLM called a tool ─────────────────────────────────
+    
     if hasattr(response, "tool_calls") and response.tool_calls:
-        tool_call = response.tool_calls[0]  # Handle the first tool call
+        tool_call = response.tool_calls[0]  
         tool_name = tool_call.get("name", "")
         args = tool_call.get("args", {})
 
@@ -137,7 +135,7 @@ async def llm_reasoning_node(state: dict) -> dict:
         url = media_library.get(keyword)
 
         if url:
-            # We use the LLM-generated message as the text reply
+            
             llm_reply = args.get("message", "")
             
             if tool_name == "attach_image":
@@ -157,7 +155,7 @@ async def llm_reasoning_node(state: dict) -> dict:
         else:
             print(f"[LLM] Tool called but keyword '{keyword}' not in media_library — skipping media.")
 
-    # If the LLM didn't generate any text (and no tool message was provided), fallback
+    
     if not llm_reply.strip():
         llm_reply = "I'm here to help! Could you please tell me more about what you're looking for?"
 

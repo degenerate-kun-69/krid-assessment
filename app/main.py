@@ -19,21 +19,21 @@ from app.services.whatsapp import close_client
 from app.routers import webhook, dashboard
 
 
-# ── Lifespan: startup / shutdown ───────────────────────────────────────────────
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── Startup ──
+    
     connect_db()
-    await seed_tenants()     # Idempotent — safe to call every time
+    await seed_tenants()     
     print("[App] Startup complete. Listening for requests.")
     yield
-    # ── Shutdown ──
-    await close_client()     # Close the httpx WhatsApp client
-    close_db()               # Close the Motor MongoDB client
+    
+    await close_client()     
+    close_db()               
     print("[App] Shutdown complete.")
 
 
-# ── App instance ───────────────────────────────────────────────────────────────
+
 app = FastAPI(
     title="Krid AI — Multi-Tenant WhatsApp Orchestrator",
     description="LangGraph-powered WhatsApp AI agent SaaS with multi-tenant support.",
@@ -41,25 +41,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── CORS (needed for the frontend to call the API from the browser) ────────────
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],     # Tighten this in production
+    allow_origins=["*"],     
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── API Routers ────────────────────────────────────────────────────────────────
+
 app.include_router(webhook.router)
 app.include_router(dashboard.router)
 
-# ── Static media assets ────────────────────────────────────────────────────────
-# Serves tenant media files (images, PDFs) from the media/ directory.
-# These URLs are stored in MongoDB and sent via Twilio to WhatsApp customers.
+
+
+
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-# ── Static frontend ────────────────────────────────────────────────────────────
-# Serves index.html, style.css, app.js from the frontend/ directory.
-# IMPORTANT: Mount AFTER the API routers so /api/* routes take priority.
+
+
+
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

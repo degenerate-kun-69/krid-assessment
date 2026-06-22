@@ -21,9 +21,9 @@ Twilio REST API for WhatsApp:
 import httpx
 from app.config import settings
 
-# ── Shared async HTTP client ───────────────────────────────────────────────────
-# Re-using a single client is important for connection pooling.
-# Initialised lazily so tests can patch it.
+
+
+
 _http_client: httpx.AsyncClient | None = None
 
 
@@ -38,7 +38,7 @@ def _is_configured() -> bool:
     number = settings.TWILIO_WHATSAPP_NUMBER
     if not sid or not token or not number:
         return False
-    # Still has placeholder values from .env.example
+    
     if "<" in sid or "<" in token or "<" in number:
         return False
     return True
@@ -68,13 +68,13 @@ def _normalize_phone(phone: str) -> str:
     """
     if phone.startswith("whatsapp:"):
         return phone
-    # Ensure it starts with +
+    
     if not phone.startswith("+"):
         phone = "+" + phone
     return f"whatsapp:{phone}"
 
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 async def mark_as_read(wa_message_id: str) -> None:
     """
@@ -130,11 +130,11 @@ async def send_image(to: str, url: str, caption: str = "") -> dict:
         "To": _normalize_phone(to),
         "MediaUrl": url,
     }
-    # Twilio uses Body for the caption text alongside media
+    
     if caption:
         payload["Body"] = caption
     else:
-        payload["Body"] = ""  # Twilio requires Body even with media
+        payload["Body"] = ""  
 
     client = _get_client()
     resp = await client.post(settings.twilio_messages_url, data=payload)

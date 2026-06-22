@@ -31,7 +31,7 @@ async def _log_outbound(
     messages_col = get_messages_col()
     await messages_col.insert_one(
         {
-            "message_id": str(uuid.uuid4()),   # Generated ID for outbound msgs
+            "message_id": str(uuid.uuid4()),   
             "session_id": session_id,
             "tenant_id": tenant_id,
             "direction": "outbound",
@@ -56,7 +56,7 @@ async def dispatcher_node(state: dict) -> dict:
     llm_reply = state.get("llm_reply") or "Sorry, something went wrong."
     media_attachment = state.get("media_attachment")
 
-    # ── Step 1: Send media if the LLM requested it ─────────────────
+    
     if media_attachment:
         media_type = media_attachment["type"]
         url = media_attachment["url"]
@@ -70,7 +70,7 @@ async def dispatcher_node(state: dict) -> dict:
                 )
             except Exception as exc:
                 print(f"[Dispatcher] WARNING: Failed to send image via Twilio: {exc}")
-            # Always log the media, even if sending failed
+            
             await _log_outbound(
                 session_id=session_id,
                 tenant_id=tenant_id,
@@ -88,7 +88,7 @@ async def dispatcher_node(state: dict) -> dict:
                 )
             except Exception as exc:
                 print(f"[Dispatcher] WARNING: Failed to send document via Twilio: {exc}")
-            # Always log the media, even if sending failed
+            
             await _log_outbound(
                 session_id=session_id,
                 tenant_id=tenant_id,
@@ -96,23 +96,23 @@ async def dispatcher_node(state: dict) -> dict:
                 mime_type="application/pdf",
             )
 
-    # ── Step 2: Send the text reply ─────────────────────────────────
+    
     try:
         await whatsapp.send_text(to=customer_phone, body=llm_reply)
     except Exception as exc:
         print(f"[Dispatcher] WARNING: Failed to send text via Twilio: {exc}")
 
-    # Always log the reply, even if sending failed
+    
     await _log_outbound(
         session_id=session_id,
         tenant_id=tenant_id,
         text=llm_reply,
-        bot_was_typing=True,  # Typing was active before this message
+        bot_was_typing=True,  
     )
 
-    # ── Step 3: Update session status ─────────────────────────────
-    # This MUST run even if Twilio calls fail, otherwise the dashboard
-    # gets stuck showing "typing..." forever.
+    
+    
+    
     sessions_col = get_sessions_col()
     await sessions_col.update_one(
         {"session_id": session_id},
@@ -126,5 +126,5 @@ async def dispatcher_node(state: dict) -> dict:
 
     print(f"[Dispatcher] Done for session={session_id} | media={media_attachment is not None}")
 
-    # No new state fields needed — dispatcher is the final node.
+    
     return {}

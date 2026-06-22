@@ -24,16 +24,16 @@ async def acknowledge_node(state: dict) -> dict:
     customer_phone = state["customer_phone"]
     wa_message_id = state["wa_message_id"]
 
-    # ── Step 1: WhatsApp UX signals ────────────────────────────────
-    # These are no-ops when WA credentials aren't configured (mock mode).
+    
+    
     await whatsapp.mark_as_read(wa_message_id)
     await whatsapp.send_typing(customer_phone)
 
-    # ── Step 2: Build session_id ───────────────────────────────────
-    # Composite key ensures one session per (tenant, phone) pair.
+    
+    
     session_id = f"{tenant_id}_{customer_phone.replace('+', '')}"
 
-    # ── Step 3: Upsert session in MongoDB ─────────────────────────
+    
     sessions_col = get_sessions_col()
     now = datetime.now(timezone.utc)
     await sessions_col.update_one(
@@ -54,7 +54,7 @@ async def acknowledge_node(state: dict) -> dict:
         upsert=True,
     )
 
-    # ── Step 4: Log inbound message ────────────────────────────────
+    
     messages_col = get_messages_col()
     await messages_col.insert_one(
         {
@@ -73,5 +73,5 @@ async def acknowledge_node(state: dict) -> dict:
 
     print(f"[Acknowledge] session={session_id} | msg_id={wa_message_id}")
 
-    # ── Return state updates ───────────────────────────────────────
+    
     return {"session_id": session_id}

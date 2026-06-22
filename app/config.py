@@ -13,27 +13,27 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # ── MongoDB ────────────────────────────────────────────────
+    
     MONGODB_URI: str = "mongodb://localhost:27017"
     DB_NAME: str = "krid_whatsapp"
 
-    # ── Twilio WhatsApp API ────────────────────────────────────
+    
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
-    # The Twilio WhatsApp sandbox number (e.g. "whatsapp:+14155238886")
-    # or your approved Twilio WhatsApp sender number.
+    
+    
     TWILIO_WHATSAPP_NUMBER: str = ""
 
-    # ── Gemini (Google GenAI) ──────────────────────────────────
+    
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-3.5-flash"
 
-    # ── Public base URL (for media asset URLs stored in MongoDB) ──
-    # Set to your deployed URL (e.g. https://krid-ai.onrender.com) in production.
-    # Twilio requires publicly accessible URLs to send media.
+    
+    
+    
     BASE_URL: str = "http://localhost:8080"
 
-    # ── Convenience property ───────────────────────────────────
+    
     @property
     def twilio_messages_url(self) -> str:
         """Twilio REST API endpoint for sending messages."""
@@ -43,5 +43,5 @@ class Settings(BaseSettings):
         )
 
 
-# Single shared instance — import this everywhere
+
 settings = Settings()

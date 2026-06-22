@@ -10,10 +10,10 @@ from datetime import datetime, timezone
 
 
 class SessionStatus(str, Enum):
-    WAITING_FOR_BOT = "WAITING_FOR_BOT"      # Customer message received, bot hasn't replied yet
-    AGENT_RESPONDING = "AGENT_RESPONDING"    # LangGraph agent is currently running
-    RESOLVED = "RESOLVED"                    # Conversation ended / issue resolved
-    NEEDS_HUMAN = "NEEDS_HUMAN"              # (bonus) Frustration detected, halted auto-replies
+    WAITING_FOR_BOT = "WAITING_FOR_BOT"      
+    AGENT_RESPONDING = "AGENT_RESPONDING"    
+    RESOLVED = "RESOLVED"                    
+    NEEDS_HUMAN = "NEEDS_HUMAN"              
 
 
 class ChatSession(BaseModel):
